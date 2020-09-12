@@ -44,8 +44,11 @@ CREATE TABLE isuumo.chair
     popularity  INTEGER         NOT NULL,
     stock       INTEGER         NOT NULL
 );
+CREATE INDEX chair_price_id ON isuumo.chair (price, id);
 CREATE INDEX chair_price_stock ON isuumo.chair (price, stock);
 CREATE INDEX chair_popularity_id_price ON isuumo.chair (popularity, id, price);
 CREATE INDEX chair_height ON isuumo.chair (height);
 CREATE INDEX chair_width ON isuumo.chair (width);
 CREATE INDEX chair_kind_stock ON isuumo.chair (kind, stock);
+CREATE INDEX chair_color_stock ON isuumo.chair (color, stock);
+CREATE INDEX chair_height_stock ON isuumo.chair (height, stock);
