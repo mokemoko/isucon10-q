@@ -28,6 +28,10 @@ var mySQLConnectionData *MySQLConnectionEnv
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 
+// for cache
+var c_chairs map[string][]Chair
+var c_estate map[string][]Estate
+
 type InitializeResponse struct {
 	Language string `json:"language"`
 }
@@ -285,6 +289,9 @@ func main() {
 }
 
 func initialize(c echo.Context) error {
+	c_chairs = map[string][]Chair{}
+	c_estate = map[string][]Estate{}
+
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
 		filepath.Join(sqlDir, "0_Schema.sql"),
@@ -393,12 +400,19 @@ func postChair(c echo.Context) error {
 		c.Logger().Errorf("failed to insert chair: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_chairs = map[string][]Chair{}
 	return c.NoContent(http.StatusCreated)
 }
 
 func searchChairs(c echo.Context) error {
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
+
+	var res ChairSearchResponse
+	if v, ok := c_chairs[c.QueryString()]; ok {
+		res.Chairs = v
+		return c.JSON(http.StatusOK, res)
+	}
 
 	if c.QueryParam("priceRangeId") != "" {
 		chairPrice, err := getRange(chairSearchCondition.Price, c.QueryParam("priceRangeId"))
@@ -509,7 +523,6 @@ func searchChairs(c echo.Context) error {
 	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?"
 
-	var res ChairSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
 	if err != nil {
 		c.Logger().Errorf("searchChairs DB execution error : %v", err)
@@ -526,6 +539,8 @@ func searchChairs(c echo.Context) error {
 		c.Logger().Errorf("searchChairs DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+
+	c_chairs[c.QueryString()] = chairs
 
 	res.Chairs = chairs
 
@@ -580,6 +595,7 @@ func buyChair(c echo.Context) error {
 		c.Echo().Logger.Errorf("transaction commit error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_chairs = map[string][]Chair{}
 
 	return c.NoContent(http.StatusOK)
 }
