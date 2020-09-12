@@ -837,31 +837,18 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	w := chair.Width
 	h := chair.Height
 	d := chair.Depth
-	args := make([]interface{}, 7)
-	args[0] = w
-	if h > d {
-		args[1] = d
+	var args []interface{}
+	if w >= h && w >= d {
+		args = append(args, h, d, d, h)
+	} else if h >= d && h >= w {
+		args = append(args, d, w, w, d)
 	} else {
-		args[1] = h
+		args = append(args, w, h, h, w)
 	}
-	args[2] = h
-	if d > w {
-		args[3] = w
-	} else {
-		args[3] = d
-	}
-	args[4] = d
-	if w > h {
-		args[5] = h
-	} else {
-		args[5] = w
-	}
-	args[6] = Limit
+	args = append(args, Limit)
 	//language=sql
 	query = `
 		SELECT * FROM (
-			SELECT * FROM estate WHERE door_width >= ? AND door_height >= ?
-			UNION
 			SELECT * FROM estate WHERE door_width >= ? AND door_height >= ?
 			UNION
 			SELECT * FROM estate WHERE door_width >= ? AND door_height >= ?
