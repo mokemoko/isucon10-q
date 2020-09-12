@@ -38,3 +38,5 @@ CREATE TABLE isuumo.chair
     stock       INTEGER         NOT NULL
 );
 CREATE INDEX chair_price ON isuumo.chair (price);
+CREATE INDEX chair_height ON isuumo.chair (height);
+CREATE INDEX chair_width ON isuumo.chair (width);
