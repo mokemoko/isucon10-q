@@ -36,6 +36,8 @@ var c_chairs map[string][]Chair
 var c_estates map[string][]Estate
 var c_chair map[int]Chair
 var c_estate map[int]Estate
+var c_lchairs map[string][]Chair
+var c_lestates map[string][]Estate
 
 type InitializeResponse struct {
 	Language string `json:"language"`
@@ -329,6 +331,8 @@ func initialize(c echo.Context) error {
 	c_estates = map[string][]Estate{}
 	c_chair = map[int]Chair{}
 	c_estate = map[int]Estate{}
+	c_lchairs = map[string][]Chair{}
+	c_lestates = map[string][]Estate{}
 
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
@@ -453,6 +457,7 @@ func postChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	c_chairs = map[string][]Chair{}
+	delete(c_lchairs, "v")
 	return c.NoContent(http.StatusCreated)
 }
 
@@ -665,6 +670,9 @@ func buyChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	c_chairs = map[string][]Chair{}
+	if chair.Stock <= 1 {
+		delete(c_lchairs, "v")
+	}
 
 	return c.NoContent(http.StatusOK)
 }
@@ -675,6 +683,10 @@ func getChairSearchCondition(c echo.Context) error {
 
 func getLowPricedChair(c echo.Context) error {
 	var chairs []Chair
+	if v, ok := c_lchairs["v"]; ok {
+		chairs = v
+		return c.JSON(http.StatusOK, ChairListResponse{Chairs: chairs})
+	}
 	query := `SELECT * FROM chair ORDER BY price ASC, id ASC LIMIT ?`
 	err := db.Select(&chairs, query, Limit)
 	if err != nil {
@@ -685,6 +697,7 @@ func getLowPricedChair(c echo.Context) error {
 		c.Logger().Errorf("getLowPricedChair DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_lchairs["v"] = chairs
 
 	return c.JSON(http.StatusOK, ChairListResponse{Chairs: chairs})
 }
@@ -783,6 +796,7 @@ func postEstate(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	c_estates = map[string][]Estate{}
+	delete(c_lestates, "v")
 	return c.NoContent(http.StatusCreated)
 }
 
@@ -902,6 +916,10 @@ func searchEstates(c echo.Context) error {
 
 func getLowPricedEstate(c echo.Context) error {
 	estates := make([]Estate, 0, Limit)
+	if v, ok := c_lestates["v"]; ok {
+		estates = v
+		return c.JSON(http.StatusOK, EstateListResponse{Estates: estates})
+	}
 	query := `SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate ORDER BY rent ASC, id ASC LIMIT ?`
 	err := dbEstate.Select(&estates, query, Limit)
 	if err != nil {
@@ -912,6 +930,7 @@ func getLowPricedEstate(c echo.Context) error {
 		c.Logger().Errorf("getLowPricedEstate DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_lestates["v"] = estates
 
 	return c.JSON(http.StatusOK, EstateListResponse{Estates: estates})
 }
