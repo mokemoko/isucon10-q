@@ -3,6 +3,7 @@ CREATE DATABASE isuumo;
 
 DROP TABLE IF EXISTS isuumo.estate;
 DROP TABLE IF EXISTS isuumo.chair;
+DROP TABLE IF EXISTS isuumo.chair_history;
 
 CREATE TABLE isuumo.estate
 (
@@ -52,3 +53,19 @@ CREATE INDEX chair_width ON isuumo.chair (width);
 CREATE INDEX chair_kind_stock ON isuumo.chair (kind, stock);
 CREATE INDEX chair_color_stock ON isuumo.chair (color, stock);
 CREATE INDEX chair_height_stock ON isuumo.chair (height, stock);
+
+CREATE TABLE isuumo.chair_history
+(
+    id          INTEGER         NOT NULL PRIMARY KEY,
+    name        VARCHAR(64)     NOT NULL,
+    description VARCHAR(4096)   NOT NULL,
+    thumbnail   VARCHAR(128)    NOT NULL,
+    price       INTEGER         NOT NULL,
+    height      INTEGER         NOT NULL,
+    width       INTEGER         NOT NULL,
+    depth       INTEGER         NOT NULL,
+    color       VARCHAR(64)     NOT NULL,
+    features    VARCHAR(64)     NOT NULL,
+    kind        VARCHAR(64)     NOT NULL,
+    popularity  INTEGER         NOT NULL
+);
