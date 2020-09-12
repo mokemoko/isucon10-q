@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -247,6 +248,7 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(filter)
 
 	// Initialize
 	e.POST("/initialize", initialize)
@@ -282,6 +284,19 @@ func main() {
 	// Start server
 	serverPort := fmt.Sprintf(":%v", getEnv("SERVER_PORT", "1323"))
 	e.Logger.Fatal(e.Start(serverPort))
+}
+
+var botRegex = regexp.MustCompile("ISUCONbot|Mediapartners-ISUCON|ISUCONCoffee|ISUCONFeedSeeker|crawler \\(https://isucon.invalid/(support/faq/|help/jp/)|isubot|Isupider")
+var botRegex2 = regexp.MustCompile("(?i)(bot|crawler|spider)(?:[-_ ./;@()]|$)")
+
+func filter(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ua := c.Request().Header.Get("User-Agent")
+		if botRegex.MatchString(ua) || botRegex2.MatchString(ua) {
+			return c.NoContent(http.StatusServiceUnavailable)
+		}
+		return next(c)
+	}
 }
 
 func initialize(c echo.Context) error {
