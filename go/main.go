@@ -369,6 +369,32 @@ func initialize(c echo.Context) error {
 		}
 	}
 
+	tx, err := db.Beginx()
+	if err != nil {
+		c.Echo().Logger.Errorf("failed to create transaction : %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(`
+			INSERT INTO chair_history (id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity) 
+			SELECT id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity 
+			FROM charis 
+			WHERE stock = 0
+		`)
+	if err != nil {
+		c.Logger().Errorf("failed to insert into chair_history: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	_, err = tx.Exec("DELETE FROM chairs WHERE stock = 0")
+	if err != nil {
+		c.Logger().Errorf("failed to delete from chairs: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	if err := tx.Commit(); err != nil {
+		c.Logger().Errorf("failed to commit: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "go",
 	})
