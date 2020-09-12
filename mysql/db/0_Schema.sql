@@ -20,7 +20,6 @@ CREATE TABLE isuumo.estate
     popularity  INTEGER             NOT NULL
 );
 CREATE INDEX estate_rent ON isuumo.estate (rent);
-CREATE INDEX door_idx ON isuumo.estate (door_width, door_height);
 
 CREATE TABLE isuumo.chair
 (
