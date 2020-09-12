@@ -895,8 +895,27 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	w := chair.Width
 	h := chair.Height
 	d := chair.Depth
-	query = `SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity ASC, id ASC LIMIT ?`
-	err = db.Select(&estates, query, w, h, w, d, h, w, h, d, d, w, d, h, Limit)
+	var args []interface{}
+	if w >= h && w >= d {
+		args = append(args, h, d, d, h)
+	} else if h >= d && h >= w {
+		args = append(args, d, w, w, d)
+	} else {
+		args = append(args, w, h, h, w)
+	}
+	args = append(args, Limit)
+	//language=sql
+	query = `
+		SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity
+		FROM estate
+		WHERE (popularity, id) IN (
+			SELECT popularity, id FROM estate WHERE door_height >= ? AND door_width >= ?
+			UNION ALL
+			SELECT popularity, id FROM estate WHERE door_height >= ? AND door_width >= ?
+		)
+		ORDER BY popularity ASC, id ASC LIMIT ?
+	`
+	err = db.Select(&estates, query, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
