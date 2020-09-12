@@ -595,6 +595,7 @@ func buyChair(c echo.Context) error {
 		c.Echo().Logger.Errorf("transaction commit error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_chairs = map[string][]Chair{}
 
 	return c.NoContent(http.StatusOK)
 }
