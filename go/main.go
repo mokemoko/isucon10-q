@@ -867,8 +867,8 @@ func searchEstateNazotte(c echo.Context) error {
 	}
 
 	var result []Estate
-	query := fmt.Sprintf("SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE ST_Contains(ST_PolygonFromText(%s), g) ORDER BY popularity DESC, id ASC", coordinates.coordinatesToText())
-	err = db.Select(&result, query)
+	query := fmt.Sprintf("SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE ST_Contains(ST_PolygonFromText(%s), g) ORDER BY popularity DESC, id ASC LIMIT ?", coordinates.coordinatesToText())
+	err = db.Select(&result, query, NazotteLimit)
 	if err == sql.ErrNoRows {
 		c.Echo().Logger.Infof("select * from estate where latitude ...", err)
 		return c.JSON(http.StatusOK, EstateSearchResponse{Count: 0, Estates: []Estate{}})
@@ -879,9 +879,7 @@ func searchEstateNazotte(c echo.Context) error {
 
 	var re EstateSearchResponse
 	re.Estates = []Estate{}
-	if len(result) > NazotteLimit {
-		re.Estates = result[:NazotteLimit]
-	} else if len(result) > 0 {
+	if len(result) > 0 {
 		re.Estates = result
 	}
 	re.Count = int64(len(re.Estates))
