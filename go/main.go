@@ -28,6 +28,12 @@ var mySQLConnectionData *MySQLConnectionEnv
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 
+// for cache
+var c_chairs map[string][]Chair
+var c_estates map[string][]Estate
+var c_chair map[int]Chair
+var c_estate map[int]Estate
+
 type InitializeResponse struct {
 	Language string `json:"language"`
 }
@@ -285,6 +291,11 @@ func main() {
 }
 
 func initialize(c echo.Context) error {
+	c_chairs = map[string][]Chair{}
+	c_estates = map[string][]Estate{}
+	c_chair = map[int]Chair{}
+	c_estate = map[int]Estate{}
+
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
 		filepath.Join(sqlDir, "0_Schema.sql"),
@@ -321,6 +332,10 @@ func getChairDetail(c echo.Context) error {
 	}
 
 	chair := Chair{}
+	if v, ok := c_chair[id]; ok {
+		chair = v
+		return c.JSON(http.StatusOK, chair)
+	}
 	query := `SELECT * FROM chair WHERE id = ?`
 	err = db.Get(&chair, query, id)
 	if err != nil {
@@ -334,6 +349,7 @@ func getChairDetail(c echo.Context) error {
 		c.Echo().Logger.Infof("requested id's chair is sold out : %v", id)
 		return c.NoContent(http.StatusNotFound)
 	}
+	c_chair[id] = chair
 
 	return c.JSON(http.StatusOK, chair)
 }
@@ -393,12 +409,19 @@ func postChair(c echo.Context) error {
 		c.Logger().Errorf("failed to insert chair: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_chairs = map[string][]Chair{}
 	return c.NoContent(http.StatusCreated)
 }
 
 func searchChairs(c echo.Context) error {
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
+
+	var res ChairSearchResponse
+	if v, ok := c_chairs[c.QueryString()]; ok {
+		res.Chairs = v
+		return c.JSON(http.StatusOK, res)
+	}
 
 	if c.QueryParam("priceRangeId") != "" {
 		chairPrice, err := getRange(chairSearchCondition.Price, c.QueryParam("priceRangeId"))
@@ -509,7 +532,6 @@ func searchChairs(c echo.Context) error {
 	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY popularity ASC, id ASC LIMIT ? OFFSET ?"
 
-	var res ChairSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
 	if err != nil {
 		c.Logger().Errorf("searchChairs DB execution error : %v", err)
@@ -526,6 +548,8 @@ func searchChairs(c echo.Context) error {
 		c.Logger().Errorf("searchChairs DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+
+	c_chairs[c.QueryString()] = chairs
 
 	res.Chairs = chairs
 
@@ -559,6 +583,7 @@ func buyChair(c echo.Context) error {
 	defer tx.Rollback()
 
 	var chair Chair
+	delete(c_chair, id)
 	err = tx.QueryRowx("SELECT * FROM chair WHERE id = ? AND stock > 0 FOR UPDATE", id).StructScan(&chair)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -580,6 +605,7 @@ func buyChair(c echo.Context) error {
 		c.Echo().Logger.Errorf("transaction commit error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_chairs = map[string][]Chair{}
 
 	return c.NoContent(http.StatusOK)
 }
@@ -612,6 +638,10 @@ func getEstateDetail(c echo.Context) error {
 	}
 
 	var estate Estate
+	if v, ok := c_estate[id]; ok {
+		estate = v
+		return c.JSON(http.StatusOK, estate)
+	}
 	err = db.Get(&estate, "SELECT id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity FROM estate WHERE id = ?", id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -621,6 +651,7 @@ func getEstateDetail(c echo.Context) error {
 		c.Echo().Logger.Errorf("Database Execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_estate[id] = estate
 
 	return c.JSON(http.StatusOK, estate)
 }
@@ -692,12 +723,19 @@ func postEstate(c echo.Context) error {
 		c.Logger().Errorf("failed to insert estate: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_estates = map[string][]Estate{}
 	return c.NoContent(http.StatusCreated)
 }
 
 func searchEstates(c echo.Context) error {
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
+
+	var res EstateSearchResponse
+	if v, ok := c_estates[c.QueryString()]; ok {
+		res.Estates = v
+		return c.JSON(http.StatusOK, res)
+	}
 
 	if c.QueryParam("doorHeightRangeId") != "" {
 		doorHeight, err := getRange(estateSearchCondition.DoorHeight, c.QueryParam("doorHeightRangeId"))
@@ -779,7 +817,6 @@ func searchEstates(c echo.Context) error {
 	searchCondition := strings.Join(conditions, " AND ")
 	limitOffset := " ORDER BY popularity ASC, id ASC LIMIT ? OFFSET ?"
 
-	var res EstateSearchResponse
 	err = db.Get(&res.Count, countQuery+searchCondition, params...)
 	if err != nil {
 		c.Logger().Errorf("searchEstates DB execution error : %v", err)
@@ -796,6 +833,8 @@ func searchEstates(c echo.Context) error {
 		c.Logger().Errorf("searchEstates DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+
+	c_estates[c.QueryString()] = estates
 
 	res.Estates = estates
 
