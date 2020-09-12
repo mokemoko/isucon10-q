@@ -17,7 +17,9 @@ CREATE TABLE isuumo.estate
     door_height INTEGER             NOT NULL,
     door_width  INTEGER             NOT NULL,
     features    VARCHAR(64)         NOT NULL,
-    popularity  INTEGER             NOT NULL
+    popularity  INTEGER             NOT NULL,
+    g GEOMETRY AS (ST_GeometryFromText(CONCAT('POINT(', latitude, ' ', longitude, ')'))) STORED NOT NULL,
+    SPATIAL INDEX (g)
 );
 CREATE INDEX estate_rent ON isuumo.estate (rent);
 CREATE INDEX door_idx ON isuumo.estate (door_width, door_height);
