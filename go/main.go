@@ -583,6 +583,7 @@ func buyChair(c echo.Context) error {
 	defer tx.Rollback()
 
 	var chair Chair
+	delete(c_chair, id)
 	err = tx.QueryRowx("SELECT * FROM chair WHERE id = ? AND stock > 0 FOR UPDATE", id).StructScan(&chair)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -605,7 +606,6 @@ func buyChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	c_chairs = map[string][]Chair{}
-	delete(c_chair, id)
 
 	return c.NoContent(http.StatusOK)
 }
