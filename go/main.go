@@ -36,6 +36,7 @@ var c_chairs map[string][]Chair
 var c_estates map[string][]Estate
 var c_chair map[int]Chair
 var c_estate map[int]Estate
+var c_lchairs map[string][]Chair
 
 type InitializeResponse struct {
 	Language string `json:"language"`
@@ -329,6 +330,7 @@ func initialize(c echo.Context) error {
 	c_estates = map[string][]Estate{}
 	c_chair = map[int]Chair{}
 	c_estate = map[int]Estate{}
+	c_lchairs = map[string][]Chair{}
 
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
@@ -456,6 +458,7 @@ func postChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	c_chairs = map[string][]Chair{}
+	delete(c_lchairs, "v")
 	return c.NoContent(http.StatusCreated)
 }
 
@@ -652,6 +655,9 @@ func buyChair(c echo.Context) error {
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	c_chairs = map[string][]Chair{}
+	if chair.Stock <= 1 {
+		delete(c_lchairs, "v")
+	}
 
 	return c.NoContent(http.StatusOK)
 }
@@ -662,6 +668,10 @@ func getChairSearchCondition(c echo.Context) error {
 
 func getLowPricedChair(c echo.Context) error {
 	var chairs []Chair
+	if v, ok := c_lchairs["v"]; ok {
+		chairs = v
+		return c.JSON(http.StatusOK, ChairListResponse{Chairs: chairs})
+	}
 	query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
 	err := db.Select(&chairs, query, Limit)
 	if err != nil {
@@ -672,6 +682,7 @@ func getLowPricedChair(c echo.Context) error {
 		c.Logger().Errorf("getLowPricedChair DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_lchairs["v"] = chairs
 
 	return c.JSON(http.StatusOK, ChairListResponse{Chairs: chairs})
 }
