@@ -24,6 +24,7 @@ CREATE TABLE isuumo.estate
 CREATE INDEX estate_rent ON isuumo.estate (rent);
 CREATE INDEX estate_door_height on isuumo.estate (door_height);
 CREATE INDEX estate_door_width on isuumo.estate (door_height);
+CREATE INDEX estate_popularity_id on isuumo.estate (popularity, id);
 CREATE INDEX estate_laitiude_longitude on isuumo.estate (latitude, longitude);
 
 CREATE TABLE isuumo.chair
