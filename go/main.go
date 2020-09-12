@@ -865,7 +865,9 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 		c.Logger().Errorf("Database execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
-
+	if len(estates) == 0 {
+		return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
+	}
 	return c.JSON(http.StatusOK, EstateListResponse{Estates: estates})
 }
 
