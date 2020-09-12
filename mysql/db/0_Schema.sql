@@ -22,7 +22,9 @@ CREATE TABLE isuumo.estate
     SPATIAL INDEX (g)
 );
 CREATE INDEX estate_rent ON isuumo.estate (rent);
-CREATE INDEX door_idx ON isuumo.estate (door_width, door_height);
+CREATE INDEX estate_door_height on isuumo.estate (door_height);
+CREATE INDEX estate_door_width on isuumo.estate (door_height);
+CREATE INDEX estate_laitiude_longitude on isuumo.estate (latitude, longitude);
 
 CREATE TABLE isuumo.chair
 (
@@ -43,3 +45,4 @@ CREATE TABLE isuumo.chair
 CREATE INDEX chair_price ON isuumo.chair (price);
 CREATE INDEX chair_height ON isuumo.chair (height);
 CREATE INDEX chair_width ON isuumo.chair (width);
+CREATE INDEX chair_kind_stock ON isuumo.chair (kind, stock);
