@@ -257,6 +257,13 @@ func init() {
 		os.Exit(1)
 	}
 	json.Unmarshal(jsonText, &estateSearchCondition)
+
+	c_chairs = map[string][]Chair{}
+	c_estates = map[string][]Estate{}
+	c_chair = map[int]Chair{}
+	c_estate = map[int]Estate{}
+	c_lchairs = map[string][]Chair{}
+	c_lestates = map[string][]Estate{}
 }
 
 func main() {
