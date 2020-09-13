@@ -1,0 +1,36 @@
+---
+file: /var/log/nginx/access.log
+sort: sum
+reverse: true
+show_footers: true
+matching_groups:
+  - "/api/chair/[0-9]+"
+  - "/api/chair/buy/[0-9]+"
+  - "/api/estate/[0-9]+"
+  - "/api/estate/req_doc/[0-9]+"
+  - "/api/recommended_estate/[0-9]+"
+  - "/_next/*"
+output: "count,1xx,2xx,3xx,4xx,5xx,method,uri,min,max,sum,avg,sum_body,avg_body"
+ltsv:
+  apptime_label:  apptime
+  status_label:   status
+  size_label:     size
+  method_label:   method
+  uri_label:      uri
+  time_label:     time
+# empty define
+json:
+  uri_key:           ""
+  method_key:        ""
+  time_key:          ""
+  response_time_key: ""
+  body_bytes_key:    ""
+  status_key:        ""
+regexp:
+  pattern:              ""
+  uri_subexp:           ""
+  method_subexp:        ""
+  time_subexp:          ""
+  response_time_subexp: ""
+  body_bytes_subexp:    ""
+  status_subexp:        ""

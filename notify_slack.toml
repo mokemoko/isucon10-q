@@ -1,0 +1,8 @@
+# https://github.com/catatsuy/notify_slack
+[slack]
+url = "SLACK_WEBHOOK_URL"
+token = "SLACK_TOKEN"
+channel = "#isucon-notify"
+username = "notify"
+icon_emoji = ":rocket:"
+interval = "10s"
