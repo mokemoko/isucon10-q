@@ -29,6 +29,9 @@ var mySQLConnectionData *MySQLConnectionEnv
 var chairSearchCondition ChairSearchCondition
 var estateSearchCondition EstateSearchCondition
 
+var c_cache = map[string]interface{}{}
+var e_cache = map[string]interface{}{}
+
 type InitializeResponse struct {
 	Language string `json:"language"`
 }
@@ -294,6 +297,8 @@ func main() {
 }
 
 func initialize(c echo.Context) error {
+	c_cache = map[string]interface{}{}
+	e_cache = map[string]interface{}{}
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
 		filepath.Join(sqlDir, "0_Schema.sql"),
@@ -404,10 +409,15 @@ func postChair(c echo.Context) error {
 		c.Logger().Errorf("failed to commit tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_cache = map[string]interface{}{}
 	return c.NoContent(http.StatusCreated)
 }
 
 func searchChairs(c echo.Context) error {
+	qs := c.QueryString()
+	if v, ok := c_cache[qs]; ok {
+		return c.JSON(http.StatusOK, v)
+	}
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
 
@@ -539,7 +549,7 @@ func searchChairs(c echo.Context) error {
 	}
 
 	res.Chairs = chairs
-
+	c_cache[qs] = res
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -591,6 +601,7 @@ func buyChair(c echo.Context) error {
 		c.Echo().Logger.Errorf("transaction commit error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	c_cache = map[string]interface{}{}
 
 	return c.NoContent(http.StatusOK)
 }
@@ -705,10 +716,15 @@ func postEstate(c echo.Context) error {
 		c.Logger().Errorf("failed to commit tx: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	e_cache = map[string]interface{}{}
 	return c.NoContent(http.StatusCreated)
 }
 
 func searchEstates(c echo.Context) error {
+	qs := c.QueryString()
+	if v, ok := e_cache[qs]; ok {
+		return c.JSON(http.StatusOK, v)
+	}
 	conditions := make([]string, 0)
 	params := make([]interface{}, 0)
 
@@ -811,6 +827,7 @@ func searchEstates(c echo.Context) error {
 	}
 
 	res.Estates = estates
+	e_cache[qs] = res
 
 	return c.JSON(http.StatusOK, res)
 }
